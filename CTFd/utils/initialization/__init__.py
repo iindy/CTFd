@@ -33,6 +33,8 @@ from CTFd.utils.config.visibility import (
 from sqlalchemy.exc import InvalidRequestError, IntegrityError
 
 import datetime
+import logging
+import os
 
 
 def init_template_filters(app):
@@ -64,12 +66,59 @@ def init_template_globals(app):
     app.jinja_env.globals.update(scores_visible=scores_visible)
 
 
+def init_logs(app):
+    logger_submissions = logging.getLogger('submissions')
+    logger_logins = logging.getLogger('logins')
+    logger_registrations = logging.getLogger('registrations')
+
+    logger_submissions.setLevel(logging.INFO)
+    logger_logins.setLevel(logging.INFO)
+    logger_registrations.setLevel(logging.INFO)
+
+    log_dir = app.config['LOG_FOLDER']
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
+    logs = {
+        'submissions': os.path.join(log_dir, 'submissions.log'),
+        'logins': os.path.join(log_dir, 'logins.log'),
+        'registrations': os.path.join(log_dir, 'registrations.log')
+    }
+
+    for log in logs.values():
+        if not os.path.exists(log):
+            open(log, 'a').close()
+
+    submission_log = logging.handlers.RotatingFileHandler(logs['submissions'], maxBytes=10000)
+    login_log = logging.handlers.RotatingFileHandler(logs['logins'], maxBytes=10000)
+    registration_log = logging.handlers.RotatingFileHandler(logs['registrations'], maxBytes=10000)
+
+    logger_submissions.addHandler(
+        submission_log
+    )
+    logger_logins.addHandler(
+        login_log
+    )
+    logger_registrations.addHandler(
+        registration_log
+    )
+
+    logger_submissions.propagate = 0
+    logger_logins.propagate = 0
+    logger_registrations.propagate = 0
+
+
 def init_request_processors(app):
     @app.context_processor
     def inject_user():
         if session:
             return dict(session)
         return dict()
+
+    @app.url_defaults
+    def inject_theme(endpoint, values):
+        if 'theme' not in values and app.url_map.is_endpoint_expecting(endpoint, 'theme'):
+            values['theme'] = ctf_theme()
 
     @app.before_request
     def needs_setup():
@@ -119,7 +168,10 @@ def init_request_processors(app):
             return
         if not session.get('nonce'):
             session['nonce'] = generate_nonce()
-        if request.method == "POST":
+        if request.method not in ('GET', 'HEAD', 'OPTIONS', 'TRACE'):
+            if request.content_type == 'application/json':
+                if session['nonce'] != request.headers.get('CSRF-Token'):
+                    abort(403)
             if request.content_type != 'application/json':
                 if session['nonce'] != request.form.get('nonce'):
                     abort(403)
