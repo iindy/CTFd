@@ -38,6 +38,9 @@ class FilesystemUploader(BaseUploader):
         location = os.path.join(self.base_path, filename)
         directory = os.path.dirname(location)
 
+        if os.path.isdir(location):
+            return
+
         if not os.path.exists(directory):
             os.makedirs(directory)
 
