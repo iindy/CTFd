@@ -44,10 +44,9 @@ def check_email_format(email):
 
 
 def check_email_is_whitelisted(email_address):
-    local_id, _, domain = email_address.partition('@')
-    domain_whitelist = get_config('domain_whitelist')
-    if domain_whitelist:
-        domain_whitelist = [d.strip() for d in domain_whitelist.split(',')]
-        if domain not in domain_whitelist:
+    email_whitelist = get_config('domain_whitelist')
+    if email_whitelist:
+        email_whitelist = [d.strip() for d in email_whitelist.split(',')]
+        if email_address not in email_whitelist:
             return False
     return True

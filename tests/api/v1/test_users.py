@@ -449,7 +449,7 @@ def test_api_user_change_email_under_whitelist():
     app = create_ctfd()
     with app.app_context():
         register_user(app)
-        set_config('domain_whitelist', 'whitelisted.com, whitelisted.org, whitelisted.net')
+        set_config('domain_whitelist', '*@whitelisted.com, *@whitelisted.org, *@whitelisted.net')
         with login_as_user(app) as client:
             r = client.patch(
                 '/api/v1/users/me',
