@@ -6,7 +6,7 @@ from CTFd.utils import markdown
 from CTFd.cache import cache
 from CTFd.utils import get_config, set_config
 from CTFd.utils.user import authed, get_current_user
-from CTFd.utils import config
+from CTFd.utils import config, validators
 from CTFd.utils.uploads import get_uploader
 from CTFd.utils.config.pages import get_page
 from CTFd.utils.config.visibility import challenges_visible
@@ -21,6 +21,15 @@ import os
 
 views = Blueprint('views', __name__)
 
+@views.route('/whitelist', methods=['POST'])
+def whitelist():
+    if request.method == 'POST':
+        email = request.form['email']
+        valid_email = validators.validate_email(request.form['email'])
+        if valid_email:
+            email_whitelist = get_config('domain_whitelist')
+            set_config('domain_whitelist', email_whitelist + ',' + email)
+    return redirect(url_for('views.static_html'))
 
 @views.route('/setup', methods=['GET', 'POST'])
 def setup():
