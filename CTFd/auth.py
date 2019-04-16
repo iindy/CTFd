@@ -127,6 +127,10 @@ def reset_password(data=None):
 @check_registration_visibility
 @ratelimit(method="POST", limit=10, interval=5)
 def register():
+    referrer = request.headers.get("Referer")
+    if not referrer or 'sites.ist.psu.edu' not in referrer:
+        return redirect("https://sites.ist.psu.edu/recruiting/form2")
+    print('referrer: ' + referrer)
     errors = get_errors()
     if request.method == 'POST':
         name = request.form['name']
