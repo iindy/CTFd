@@ -110,7 +110,9 @@ class UserSchema(ma.ModelSchema):
                     raise ValidationError('Email address has already been used', field_names=['email'])
                 if check_email_is_whitelisted(email) is False:
                     raise ValidationError(
-                        "Only whitelisted email addresses may register",
+                        "Only email addresses under {domains} may register".format(
+                            domains=get_config('domain_whitelist')
+                        ),
                         field_names=['email']
                     )
                 if get_config('verify_emails'):
